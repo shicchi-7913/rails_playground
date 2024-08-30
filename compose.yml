@@ -22,25 +22,34 @@ services:
       AWS_SECRET_ACCESS_KEY: test
       AWS_DEFAULT_REGION: ap-northeast-1
       BUCKET_NAME: rails-playground # init.sh で指定したバケット名と同じ
+      LOCALSTACK_ENDPOINT: https://localhost.localstack.cloud:4566
     depends_on:
       - db
-      - localstack # docker compose up 時に localstack も起動する
+      - localstack 
+    networks:
+      - app-network
 
   localstack:
-    image: localstack/localstack:3.6.0
+    image: localstack/localstack:3.7.0
     ports:
       - "4566:4566"
     environment:
+      DEBUG: 1
       AWS_ACCESS_KEY_ID: test # S3_SKIP_SIGNATURE_VALIDATION を 0 に設定することで test が固定値に
       AWS_SECRET_ACCESS_KEY: test # 上に同じ
       AWS_DEFAULT_REGION: ap-northeast-1
-      SERVICES: s3 # s3 のみ利用
+      SERVICES: s3
       S3_SKIP_SIGNATURE_VALIDATION: 0 # 正しい署名付き URL でなければファイルにアクセスできないようする
-      DISABLE_CUSTOM_CORS_S3: 1 # S3 による CORS オーバーライドを無効にする
     volumes:
       - localstack_volume:/etc/localstack
-      - ./init.sh:/etc/localstack/init.sh
+      - ./init.sh:/etc/localstack/init/ready.d/init.sh # 起動時にシェルスクリプトを実行
+    networks:
+      app-network:
+        aliases:
+          - localhost.localstack.cloud
 
+networks:
+  app-network:
 volumes:
   db_data:
   localstack_volume:
